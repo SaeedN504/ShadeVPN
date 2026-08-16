@@ -24,6 +24,13 @@ fn json_string(env: &mut JNIEnv, value: &str) -> jstring {
     env.new_string(value).expect("JNI string").into_raw()
 }
 
+fn json_error(reason: &str) -> String {
+    format!(
+        "{{\"reachable\":false,\"reason\":\"{}\"}}",
+        reason.replace('"', "\\\"")
+    )
+}
+
 fn read_profile(env: &mut JNIEnv, value: JString) -> Result<RealityProfile, String> {
     let raw = env
         .get_string(&value)
@@ -68,7 +75,13 @@ pub extern "system" fn Java_com_shadevpn_android_NativeBridge_nativeBuildLane(
 
     match result {
         Ok(value) => json_string(&mut env, &value),
-        Err(reason) => json_string(&mut env, &format!("{{\"lane\":\"invalid\",\"status\":\"rejected\",\"reason\":\"{}\"}}", reason)),
+        Err(reason) => json_string(
+            &mut env,
+            &format!(
+                "{{\"lane\":\"invalid\",\"status\":\"rejected\",\"reason\":\"{}\"}}",
+                reason.replace('"', "\\\"")
+            ),
+        ),
     }
 }
 
@@ -79,15 +92,31 @@ pub extern "system" fn Java_com_shadevpn_android_NativeBridge_nativeValidateProf
     profile_json: JString,
 ) -> jstring {
     match read_profile(&mut env, profile_json) {
-        Ok(profile) => json_string(&mut env, &format!(
-            "{{\"valid\":{},\"reason\":\"{}\"}}",
-            profile.security.eq_ignore_ascii_case("reality")
-                && profile.public_key_present
-                && profile.short_id_present
-                && profile.sni.as_deref().is_some_and(|value| !value.is_empty()),
-            if profile.security.eq_ignore_ascii_case("reality") { "Reality profile parsed" } else { "security must be Reality" }
-        )),
-        Err(reason) => json_string(&mut env, &format!("{{\"valid\":false,\"reason\":\"{}\"}}", reason)),
+        Ok(profile) => json_string(
+            &mut env,
+            &format!(
+                "{{\"valid\":{},\"reason\":\"{}\"}}",
+                profile.security.eq_ignore_ascii_case("reality")
+                    && profile.public_key_present
+                    && profile.short_id_present
+                    && profile
+                        .sni
+                        .as_deref()
+                        .is_some_and(|value| !value.is_empty()),
+                if profile.security.eq_ignore_ascii_case("reality") {
+                    "Reality profile parsed"
+                } else {
+                    "security must be Reality"
+                }
+            ),
+        ),
+        Err(reason) => json_string(
+            &mut env,
+            &format!(
+                "{{\"valid\":false,\"reason\":\"{}\"}}",
+                reason.replace('"', "\\\"")
+            ),
+        ),
     }
 }
 
@@ -113,8 +142,14 @@ pub extern "system" fn Java_com_shadevpn_android_NativeBridge_nativeProbeControl
     });
 
     match result {
-        Ok(reason) => json_string(&mut env, &format!("{{\"reachable\":true,\"reason\":\"{}\"}}", reason)),
-        Err(reason) => json_string(&mut env, &format!("{{\"reachable\":false,\"reason\":\"{}\"}}", reason)),
+        Ok(reason) => json_string(
+            &mut env,
+            &format!(
+                "{{\"reachable\":true,\"reason\":\"{}\"}}",
+                reason.replace('"', "\\\"")
+            ),
+        ),
+        Err(reason) => json_string(&mut env, &json_error(&reason)),
     }
 }
 
@@ -124,10 +159,18 @@ mod tests {
 
     #[test]
     fn parses_reality_profile_shape() {
-        let profile: RealityProfile = serde_json::from_str(r#"{
-            "serverAddress":"127.0.0.1","serverPort":443,"security":"reality",
-            "network":"tcp","sni":"example.com","publicKeyPresent":true,"shortIdPresent":true
-        }"#).expect("profile should parse");
+        let profile: RealityProfile = serde_json::from_str(
+            r#"{
+                "serverAddress":"127.0.0.1",
+                "serverPort":443,
+                "security":"reality",
+                "network":"tcp",
+                "sni":"example.com",
+                "publicKeyPresent":true,
+                "shortIdPresent":true
+            }"#,
+        )
+        .expect("profile should parse");
         assert_eq!(profile.server_port, 443);
         assert!(profile.public_key_present);
     }
