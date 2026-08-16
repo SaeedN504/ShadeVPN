@@ -2,23 +2,29 @@
 
 Android client and native transport layer for ShadeVPN.
 
-## First milestone
+## Milestone 2
 
-This milestone establishes a clean Kotlin/Compose + Rust/JNI foundation. It does not claim a working VPN tunnel yet. The first production transport target is **VLESS + Reality over TCP**, followed by a TCP fallback and optional QUIC transports after real carrier testing.
+This repo now has an **honest orchestration scaffold** for the first real transport target: **VLESS + Reality over TCP**.
+
+What exists now:
+
+- Kotlin connection state model with explicit control-plane vs data-plane phases
+- `VpnService` lifecycle scaffold with TUN ownership staying on Android
+- VLESS + Reality profile parser for `tcp`, `ws`, and `xhttp`
+- Rust/JNI lane-preparation skeleton for the Reality lane
+- Compose debug surface that refuses to show connected until the data-plane probe is marked successful
+
+What still does **not** exist yet:
+
+- Real socket handshake
+- Packet pump across JNI
+- Actual data-plane probe
+- Kill switch, leak protection, reconnect, fallback racing
 
 ### Repository split
 
 - `ShadeVPN`: TypeScript/React/Xray server panel and PWA.
 - `ShadeVPN-Android`: Android client, VpnService/TUN owner, and native transport adapters.
-
-### Scope
-
-- Android Kotlin + Jetpack Compose shell
-- Android `VpnService` declaration and permission flow entry point
-- Rust native crate with a deliberately small JNI boundary
-- CI for Android checks and Rust tests
-- ABI targets: `arm64-v8a`, `armeabi-v7a`, `x86_64`
-- Secret-redacted diagnostics
 
 ### Transport policy for Iran
 
@@ -27,25 +33,16 @@ This milestone establishes a clean Kotlin/Compose + Rust/JNI foundation. It does
 3. Shadowsocks 2022: compatibility lane, never preferred over Reality.
 4. Hysteria2/MASQUE H3: experimental until UDP/QUIC passes a real network test.
 
-OpenVPN and MTProto are intentionally out of scope. OpenVPN introduces an incompatible GPL dependency boundary for this client, while MTProto is not a full-device TUN transport.
+OpenVPN and MTProto are intentionally out of scope.
 
-## Build prerequisites
+## Next build target
 
-- JDK 17
-- Android Studio Ladybug or newer
-- Android SDK 35 and NDK 27+
-- Rust stable and Android targets
-- `cargo fmt` and `cargo clippy`
+Milestone 3 should replace the fake lane builder with:
 
-## Local checks
-
-```bash
-./gradlew test lintDebug assembleDebug
-cargo fmt --manifest-path native/Cargo.toml -- --check
-cargo test --manifest-path native/Cargo.toml
-```
-
-The first milestone should install and launch on a clean emulator, show the VPN permission entry point, and report whether the native library loaded. It must not present a fake connected state.
+- actual Reality handshake state
+- packet pump JNI surface
+- verified packet round-trip through TUN
+- structured failure reasons surfaced back to UI
 
 ## Security rules
 
