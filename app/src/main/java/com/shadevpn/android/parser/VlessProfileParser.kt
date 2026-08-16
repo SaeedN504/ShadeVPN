@@ -17,7 +17,7 @@ object VlessProfileParser {
         val params = parsed.queryParameterNames.associateWith { key -> parsed.getQueryParameter(key).orEmpty() }
         val fragment = parsed.fragment?.let { URLDecoder.decode(it, StandardCharsets.UTF_8.name()) }
         val security = params["security"].orEmpty().ifBlank { "reality" }
-        require(security.equals("reality", ignoreCase = true)) { "Milestone 2 only supports Reality" }
+        require(security.equals("reality", ignoreCase = true)) { "Milestone 3 only supports Reality" }
         val network = params["type"].orEmpty().ifBlank { "tcp" }
         require(network.lowercase() in setOf("tcp", "ws", "xhttp")) { "Unsupported network type: $network" }
 
@@ -38,11 +38,13 @@ object VlessProfileParser {
         )
     }
 
+    /** Native-only payload. Never log, persist, or display this string. */
     fun toSanitizedJson(profile: VlessProfile): String = buildString {
         append('{')
         append("\"name\":\"").append(escape(profile.name)).append("\",")
         append("\"serverAddress\":\"").append(escape(profile.serverAddress)).append("\",")
         append("\"serverPort\":").append(profile.serverPort).append(',')
+        append("\"uuid\":\"").append(escape(profile.uuid)).append("\",")
         append("\"network\":\"").append(escape(profile.network)).append("\",")
         append("\"security\":\"").append(escape(profile.security)).append("\",")
         append("\"sni\":").append(nullable(profile.sni)).append(',')
