@@ -51,8 +51,8 @@ object VlessProfileParser {
         append("\"host\":").append(nullable(profile.host)).append(',')
         append("\"path\":").append(nullable(profile.path)).append(',')
         append("\"flow\":").append(nullable(profile.flow)).append(',')
-        append("\"publicKeyPresent\":").append(profile.publicKey != null).append(',')
-        append("\"shortIdPresent\":").append(profile.shortId != null).append(',')
+        append("\"publicKey\":").append(nullable(profile.publicKey)).append(',')
+        append("\"shortId\":").append(nullable(profile.shortId)).append(',')
         append("\"fingerprint\":").append(nullable(profile.fingerprint))
         append('}')
     }
