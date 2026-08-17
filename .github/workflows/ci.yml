@@ -23,11 +23,7 @@ jobs:
       # gradlew was committed through the API, which cannot set the exec bit.
       - run: chmod +x ./gradlew
       - run: ./gradlew --no-daemon test lintDebug assembleDebug
-  native:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
-        with: { components: rustfmt, targets: aarch64-linux-android, armv7-linux-androideabi, x86_64-linux-android }
-      - run: cargo fmt --manifest-path native/Cargo.toml -- --check
-      - run: cargo test --manifest-path native/Cargo.toml
+
+  # The v1 `native` job is gone. Transport is supplied by the libbox AAR, so
+  # there is no Rust crate and no NDK ABI matrix to build. See
+  # docs/ARCHITECTURE.md, "Why v1 died".
